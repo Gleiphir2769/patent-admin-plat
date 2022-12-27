@@ -11,6 +11,7 @@ import (
 	"go-admin/app/admin-agent/service/dtos"
 	"go-admin/app/user-agent/models"
 	serviceUser "go-admin/app/user-agent/service"
+	"go-admin/app/user-agent/service/dto"
 	"strconv"
 )
 
@@ -421,4 +422,43 @@ func (e Report) UserGetReportById(c *gin.Context) {
 		return
 	}
 	e.OK(model, "查询成功")
+}
+
+// GetPatentNovelty
+// @Summary 查新报告
+// @Description  通过patentId生成查新报告
+// @Tags 用户-报告
+// @Param ReportId query string false "专利ID"
+// @Router /apis/v1/user-agent/report/novelty/{patent_id} [get]
+// @Security Bearer
+func (e Report) GetPatentNovelty(c *gin.Context) {
+	s := serviceUser.Report{}     //service中查询或者返回的结果赋值给s变量
+	req := dto.PatentGetPageReq{} //被绑定的数据
+	err := e.MakeContext(c).
+		MakeOrm().
+		Bind(&req, nil).
+		MakeService(&s.Service).
+		Errors
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+	req.PatentId, err = strconv.Atoi(c.Param("patent_id")) //接受成功
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+
+	list := make([]models.Patent2, 0)
+	var count int64
+
+	err = s.GetNovelty(&req, &list, &count)
+	if err != nil {
+		e.Error(500, err, "查询失败")
+		return
+	}
+
+	e.PageOK(list, int(count), req.GetPageIndex(), req.GetPageSize(), "查询成功")
 }
