@@ -2,12 +2,22 @@ package models
 
 type Node struct {
 	NodeId            string  `grom:"primaryKey;size:128" json:"id" `
-	NodeName          string  `grom:"size:128" json:"name"` //用户名
+	NodeName          string  `grom:"size:128" json:"name"`
 	NodeSymbolizeSize float32 `grom:"" json:"symbolSize"`
-	//NodeX             float32 `grom:"" json:"x"`
-	//NodeY             float32 `grom:"" json:"y"`
-	NodeValue    int `grom:"" json:"value"` //重复次数
-	NodeCategory int `grom:"" json:"category"`
+	NodeValue         int     `grom:"" json:"value"`
+	NodeCategory      int     `grom:"" json:"category"`
+}
+
+// Link n--n的关系
+type Link struct {
+	Source string `json:"source"`
+	Target string `json:"target"`
+	Value  int    `json:"value"`
+}
+
+type Graph struct {
+	Nodes []Node `json:"nodes"`
+	Links []Link `json:"links"`
 }
 
 func (e *Node) TableName() string {
@@ -15,16 +25,9 @@ func (e *Node) TableName() string {
 }
 
 type OneUserPatents struct {
-	//UserId    int
 	Patentsid []int
 }
 
-// n--n的关系
-type Link struct {
-	Source string `json:"source"`
-	Target string `json:"target"`
-	Value  int    `json:"value"`
-}
 type InventorPatent struct {
 	UserId   int
 	PatentId int
