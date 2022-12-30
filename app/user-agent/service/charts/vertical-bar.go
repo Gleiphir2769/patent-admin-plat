@@ -1,7 +1,5 @@
 package charts
 
-import "strings"
-
 const verticalBarProfile = `{
   "tooltip": {
     "trigger": "axis",
@@ -43,15 +41,16 @@ const verticalBarProfile = `{
 }`
 
 func genVerticalBarProfile(cate []string, data []int, isRotate bool) string {
-	var afterRotateProfile string
+	p := newProfile(verticalBarProfile)
 	if isRotate {
-		afterRotateProfile = strings.Replace(verticalBarProfile, "$ROTATE", ROTATE, 1)
+		p.replace("$ROTATE", ROTATE)
 	} else {
-		afterRotateProfile = strings.Replace(verticalBarProfile, "$ROTATE", "", 1)
+		p.replace("$ROTATE", "")
 	}
 	cateTemp := strListTemplate(cate)
 	dataTemp := intListTemplate(data)
-	return strings.Replace(
-		strings.Replace(afterRotateProfile, "$CATE", cateTemp, 1),
-		"$DATA", dataTemp, 1)
+
+	return p.replace("$CATE", cateTemp).
+		replace("$DATA", dataTemp).
+		String()
 }

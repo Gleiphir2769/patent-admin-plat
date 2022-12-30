@@ -34,9 +34,9 @@ func (c *chart1302) Serialize(params []byte) (string, error) {
 	for _, s := range resp.Option.Statistics {
 		data = append(data, s[0])
 	}
-	bar := genLineSmoothProfile(resp.Option.Classes, data, true)
+	chart := genLineSmoothProfile(resp.Option.Classes, data, true)
 
-	return bar, nil
+	return chart, nil
 }
 
 func (c *chart1302) Name() string {

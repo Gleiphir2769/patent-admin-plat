@@ -2,7 +2,6 @@ package charts
 
 import (
 	"encoding/json"
-	"strings"
 )
 
 const pieProfile = `{
@@ -68,5 +67,6 @@ func (d *PieDataList) String() string {
 
 func genPieProfile(classes []string, data []int) string {
 	template := pieDataTemplate(classes, data)
-	return strings.Replace(pieProfile, "$DATA", template, 1)
+	p := newProfile(pieProfile)
+	return p.replace("$DATA", template).String()
 }

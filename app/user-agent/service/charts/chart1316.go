@@ -34,9 +34,9 @@ func (c *chart1316) Serialize(params []byte) (string, error) {
 	for _, s := range resp.Option.Statistics {
 		data = append(data, s[0])
 	}
-	bar := genVerticalBarProfile(resp.Option.Classes, data, true)
+	chart := genVerticalBarProfile(resp.Option.Classes, data, true)
 
-	return bar, nil
+	return chart, nil
 }
 
 func (c *chart1316) Name() string {

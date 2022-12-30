@@ -34,9 +34,9 @@ func (c *chart101) Serialize(params []byte) (string, error) {
 	for _, s := range resp.Option.Statistics {
 		data = append(data, s[0])
 	}
-	bar := genPieProfile(resp.Option.Classes, data)
+	pie := genPieProfile(resp.Option.Classes, data)
 
-	return bar, nil
+	return pie, nil
 }
 
 func (c *chart101) Name() string {
