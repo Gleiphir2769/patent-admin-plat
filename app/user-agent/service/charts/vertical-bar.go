@@ -2,7 +2,7 @@ package charts
 
 import "strings"
 
-const barProfile = `{
+const verticalBarProfile = `{
   "tooltip": {
     "trigger": "axis",
     "axisPointer": {
@@ -17,41 +17,37 @@ const barProfile = `{
   },
   "xAxis": [
     {
+      "type": "value"
+    }
+  ],
+  "yAxis": [
+    {
       "type": "category",
       "data": $CATE,
       $ROTATE
     }
   ],
-  "yAxis": [
-    {
-      "type": "value"
-    }
-  ],
   "series": [
     {
-      "name": "Direct",
       "type": "bar",
-      "barWidth": "60%",
+      "stack": "total",
+      "label": {
+        "show": true
+      },
+      "emphasis": {
+        "focus": "series"
+      },
       "data": $DATA
     }
   ]
 }`
 
-const ROTATE = `
-      "axisTick": {
-        "alignWithLabel": true
-      },
-      "axisLabel": {
-        "interval": 0,
-        "rotate": 45
-      }`
-
-func genBarProfile(cate []string, data []int, isRotate bool) string {
+func genVerticalBarProfile(cate []string, data []int, isRotate bool) string {
 	var afterRotateProfile string
 	if isRotate {
-		afterRotateProfile = strings.Replace(barProfile, "$ROTATE", ROTATE, 1)
+		afterRotateProfile = strings.Replace(verticalBarProfile, "$ROTATE", ROTATE, 1)
 	} else {
-		afterRotateProfile = strings.Replace(barProfile, "$ROTATE", "", 1)
+		afterRotateProfile = strings.Replace(verticalBarProfile, "$ROTATE", "", 1)
 	}
 	cateTemp := strListTemplate(cate)
 	dataTemp := intListTemplate(data)
