@@ -451,7 +451,7 @@ func (e Report) GetPatentNovelty(c *gin.Context) {
 		return
 	}
 
-	list := make([]models.Patent2, 0)
+	list := make([]models.Patent, 0)
 	var count int64
 
 	err = s.GetNovelty(&req, &list, &count)

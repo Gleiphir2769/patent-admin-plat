@@ -2,8 +2,8 @@ package service
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
-	"fmt"
 	log "github.com/go-admin-team/go-admin-core/logger"
 	"github.com/go-ego/gse"
 	"github.com/google/uuid"
@@ -24,6 +24,13 @@ import (
 
 	"github.com/go-admin-team/go-admin-core/sdk/service"
 	//"gorm.io/gorm"
+)
+
+const (
+	conclu     = "\n\n本平台特别声明：\n1、截止您提交查新报告申请之日，本查新报告充分依据提交的具体技术内容而出具。\n2、本平台谨循行业勤勉尽责之精神与诚实信用之原则，以假定提供之文件资料真实有效为前提，并对之进行审慎揣度，力避所出报告记载虚假与误导陈述之内容。\n3、本报告仅供参考，不作为任何法律、投资、并购、重组、买卖、许可等目的使用，未经本平台书面许可，不得另作他用。\n依据主要法律（此法律系广义之说，含法律、行政法规等可作为出具报告之现行有效之立法文件）、法规、及相关规范性法律文件，通过专利搜索数据库在国内国外范围内进行检索 ，完全以文献中的事实、数据为依据，不受各种主观、客观因素影响。\n"
+	goodresult = "在本次检索到的国内外公开发表的专利及非专利文献中，尚未发现与本项目研究内容一致的文献报道，本项目内容在国内外具备新颖性。"
+	badresult  = "在本次检索到的国内外公开发表的专利及非专利文献中，发现与本项目研究内容一致的文献报道，本项目内容在国内外不具备新颖性。"
+	html       = "<style type=\"text/css\">\n.mytable{\nmargin:0 auto;\nwidth:620px;\n}\n</style>\n<table class=\"mytable\" cellspacing=\"0\" cellpadding=\"0\">\n    <tbody>\n        <tr style=\";height:869px\" class=\"firstRow\">\n            <td colspan=\"7\"  style=\"border: 1px solid windowtext; padding: 0px 7px; word-break: break-all;\" width=\"553\"  valign=\"top\" height=\"869\">\n                <p>\n                    报告编号：number\n                </p>\n                <p>\n                    &nbsp;\n                </p>\n                <p>\n                    &nbsp;\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:30px;font-family:宋体\">科 技 查 新 报 告</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:29px;font-family:宋体\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:29px;font-family:宋体\">&nbsp;</span></strong>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">项目名称：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">pname</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">委&nbsp;&nbsp;托&nbsp;&nbsp;人：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">pearson</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">委托日期：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">startdate</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">查新机构：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">institution</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">完成日期：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">finishdate</span>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:21px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:16px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:16px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:16px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:21px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:21px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:16px\">教育部科技发展中心</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <span style=\"font-size:16px\">二O一三年制</span>\n                </p>\n            </td>\n        </tr>\n    </tbody>\n</table>\n<p>\n    <br/>\n</p>\n<table class=\"mytable\" cellspacing=\"0\" cellpadding=\"0\">    <tbody>\n        <tr style=\";height:36px\" class=\"firstRow\">\n            <td rowspan=\"2\" style=\"border: 1px solid windowtext; padding: 0px 7px; word-break: break-all;\" width=\"77\" height=\"36\">\n                <p style=\"text-align:justify;text-justify:distribute-all-lines\">\n                    查新项目\n                </p>\n                <p style=\"text-align:justify;text-justify:distribute-all-lines\">\n                    名称\n                </p>\n            </td>\n            <td colspan=\"6\" style=\"border-color: windowtext windowtext windowtext currentcolor; border-style: solid solid solid none; border-width: 1px 1px 1px medium; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"476\" height=\"36\">\n                <p>\n                    中文：cname\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:36px\">\n            <td colspan=\"6\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"476\" height=\"36\">\n                <p>\n                    英文：略\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:23px\">\n            <td rowspan=\"5\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"77\" height=\"23\">\n                <p style=\"text-align:center\">\n                    查新机构\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"75\" height=\"23\">\n                <p>\n                    名称\n                </p>\n            </td>\n            <td colspan=\"5\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"401\" height=\"23\">\n                insName<br/>\n            </td>\n        </tr>\n        <tr style=\";height:23px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"75\" height=\"23\">\n                <p>\n                    通信地址\n                </p>\n            </td>\n            <td colspan=\"3\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"232\" height=\"23\">\n                insAddress<br/>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"67\" height=\"23\">\n                <p>\n                    邮政编码\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"102\" height=\"23\">\n                insPost<br/>\n            </td>\n        </tr>\n        <tr style=\";height:17px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"75\" height=\"17\">\n                <p>\n                    负责人\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"93\" height=\"17\">\n                pic<br/>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"58\" height=\"17\">\n                <p>\n                    电话\n                </p>\n            </td>\n            <td colspan=\"3\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"250\" height=\"17\">\n                tele1<br/>\n            </td>\n        </tr>\n        <tr style=\";height:16px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"75\" height=\"16\">\n                <p>\n                    联系人\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"93\" height=\"16\">\n                ptc<br/>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"58\" height=\"16\">\n                <p>\n                    电话\n                </p>\n            </td>\n            <td colspan=\"3\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"250\" height=\"16\">\n                tele2<br/>\n            </td>\n        </tr>\n        <tr style=\";height:27px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"75\" height=\"27\">\n                <p>\n                    电子邮箱\n                </p>\n            </td>\n            <td colspan=\"5\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"401\" height=\"27\">\n                insEamil<br/>\n            </td>\n        </tr>\n        <tr style=\";height:107px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"107\">\n                <p>\n       <br>   <strong><span style=\"font-size:20px;font-family:宋体\">一、项目的科学技术要点\n  </span></strong>              </p> <p style=\"text-indent:28px\">&nbsp;telepoint\n       </p>      </td>\n        </tr>\n        <tr style=\";height:107px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"107\">\n                <p>\n       <br>       <strong><span style=\"font-size:20px;font-family:宋体\">二、专利检索范围及检索策略\n  </span></strong>                       </p>\n                <p style=\"text-indent:28px\">\n                <strong>     检索的中文数据库\n      </strong>           </p>\n                <p style=\"text-indent:28px\">\n                    &nbsp;cDataBase\n                </p>\n                <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n                <p style=\"text-indent:28px\">\n            <strong>         检索词\n       </strong>          </p >\n                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        retWord\n                              <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n                <p style=\"text-indent:28px\">\n                  <strong>   检索式\n       </strong>          </p>\n                             &nbsp;&nbsp;&nbsp;&nbsp;     retType\n              &nbsp;\n                <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:89px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"89\">\n                <p>\n       <br>      <strong><span style=\"font-size:20px;font-family:宋体\">  三、检索结果\n  </span></strong>                     </p>\n                <p style=\"text-indent:28px\">\n                    依据上专利检索范围和检索式，共检索出相专利 num1 项，其中密切相关专利 num2 项，题录为：\n                </p>&nbsp; &nbsp;&nbsp;&nbsp; retResult\n                <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:89px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"89\">\n                <p>\n    <br>     <strong><span style=\"font-size:20px;font-family:宋体\">  四、查新结论\n    </span></strong>                      </p>\n                                        <p style=\"text-indent:28px\">   经对检出的相关文献进行阅读、分析、对比，结论如下：</p> <p style=\"text-indent:28px\"> retConclusion </p> \n                <p>\n                    &nbsp;\n                </p>\n            </td>\n        </tr>\n    </tbody>\n</table>\n<p>\n    <br/>\n</p>"
 )
 
 type Report struct {
@@ -165,13 +172,12 @@ func (e *Report) UpdateReport(c *dtos.ReportGetPageReq) error {
 //}
 
 // GetNovelty 获取查新报告
-func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, count *int64) error {
+func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent, count *int64) error {
 	var err error
-	var data models.Patent2
-	var model models.Patent2
-	var list1 []models.Patent2
-	fmt.Println("id在这里？", c.GetPatentId())
-	db := e.Orm.First(&model, c.GetPatentId())
+	var temppatent models.Patent
+	var data dto.PatentGetPageReq
+	var model dto.PatentGetPageReq
+	db := e.Orm.First(&temppatent, c.GetPatentId())
 	err = db.Error
 	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
 		err = errors.New("查看专利不存在或无权查看")
@@ -182,7 +188,12 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 		e.Log.Errorf("db error:%s", err)
 		return err
 	}
-
+	err = json.Unmarshal([]byte(temppatent.PatentProperties), &model)
+	if err != nil {
+		err = errors.New("专利格式转换失败")
+		e.Log.Errorf("error:%s", err)
+		return err
+	}
 	var separator = "|"
 	var sentence = model.TI + model.CL
 	var seg gse.Segmenter
@@ -191,8 +202,7 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 	see := GetResult(segments)
 	resWords := RemoveStop(see)
 	result := unique(resWords)
-	var sqlse2 = "CONCAT_WS(\" \", TI, CL) REGEXP \"" + strings.Join(result, separator) + "\""
-	fmt.Println(result)
+	var sqlse2 = "CONCAT_WS(\" \", patent_properties) REGEXP \"" + strings.Join(result, separator) + "\""
 
 	err = e.Orm.Model(&data).
 		Scopes(
@@ -204,7 +214,17 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 		e.Log.Errorf("db error:%s", err)
 		return err
 	}
-	list1 = *list
+	list2 := *list
+	lenth := len(list2)
+	var list1 = make([]dto.PatentGetPageReq, lenth)
+	for i := 0; i < lenth; i++ {
+		err := json.Unmarshal([]byte(list2[i].PatentProperties), &list1[i])
+		if err != nil {
+			err = errors.New("专利格式转换失败")
+			e.Log.Errorf("error:%s", err)
+			return err
+		}
+	}
 	var totalinfo []string
 	for j := 0; j < len(list1); j++ {
 		totalinfo = append(totalinfo, list1[j].TI+"，"+list1[j].CL)
@@ -230,13 +250,10 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 	}
 	keywords := ts.Keywords(0.2, 0.8)
 	keywords = unique(keywords)
-	fmt.Println("keywords222222 ", keywords)
-	fmt.Println("检索词：\n")
 	var searchlist string
 	var searchword = make([][]string, 50)
 	for i := 0; i < len(keywords); i++ {
 		searchlist += keywords[i] + " " + toString(getSimilar(keywords[i])) + "\n"
-		//fmt.Println(keywords[i], " ", getSimilar(keywords[i]))
 		temp := getSimilar(keywords[i])
 		searchword[i] = make([]string, 0)
 		searchword[i] = append(searchword[i], keywords[i])
@@ -245,7 +262,6 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 		}
 	}
 	searchtype := getSearchType(searchword)
-	fmt.Println("检索式：", searchtype)
 	n := len(sims)
 	var conclusion []string
 	var retconc string
@@ -259,17 +275,17 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 		}
 		sims[i], sims[maxNumIndex] = sims[maxNumIndex], sims[i]
 		list1[i], list1[maxNumIndex] = list1[maxNumIndex], list1[i]
-		if sims[i].score > 0.3 {
-			temp := strconv.Itoa(count1) + ".申请人: " + list1[i].PINN + "\n申请单位:" + list1[i].PA + "\n专利名称:" + list1[i].TI + "\n申请号：" + list1[i].PNM + "\n申请日：" + list1[i].AD + "\n相似度：" + strconv.FormatFloat(sims[i].score*100, 'f', 2, 64) + "%" + "\n简介：" + list1[i].CL + "\n"
-			conclusion = append(conclusion, temp)
-			retconc = retconc + "专利" + strconv.Itoa(count1) + "是" + CutFirst(list1[i].CLAIMS) + "\n"
+		if sims[i].score > 0.5 {
+			tempstring := strconv.Itoa(count1) + ".申请人: " + list1[i].PINN + "\n申请单位:" + list1[i].PA + "\n专利名称:" + list1[i].TI + "\n申请号：" + list1[i].PNM + "\n申请日：" + list1[i].AD + "\n相似度：" + strconv.FormatFloat(sims[i].score*100, 'f', 2, 64) + "%" + "\n简介：" + list1[i].CL + "\n"
+			conclusion = append(conclusion, tempstring)
+			retconc = retconc + "专利" + strconv.Itoa(count1) + "是" + CutFirst(list1[i].CLM) + "\n"
 			count1++
 		}
 	}
 	scale := float64(count1-1) / float64(len(list1))
-	retconc = retconc + model.CL + LastWord(scale)
+	retconc = retconc + model.CL + conclu + LastWord(scale)
 
-	str1 := html()
+	str1 := html
 	str1 = strings.Replace(str1, "number", GetRandomString(10), -1)
 	str1 = strings.Replace(str1, "pname", model.TI, -1)
 	str1 = strings.Replace(str1, "pearson", "北京邮电大学 胡泊", -1)
@@ -277,7 +293,7 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 	str1 = strings.Replace(str1, "institution", "教育部科技查新工作站", -1)
 	str1 = strings.Replace(str1, "finishdate", getTime(), -1)
 	str1 = strings.Replace(str1, "cname", model.TI, -1)
-	str1 = strings.Replace(str1, "telepoint", toHtml(model.CLAIMS), -1)
+	str1 = strings.Replace(str1, "telepoint", toHtml(model.CLM), -1)
 	str1 = strings.Replace(str1, "retWord", toHtml(searchlist), -1)
 	str1 = strings.Replace(str1, "retType", toHtml(searchtype), -1)
 	str1 = strings.Replace(str1, "num1", strconv.Itoa(len(list1)), -1)
@@ -288,10 +304,7 @@ func (e *Report) GetNovelty(c *dto.PatentGetPageReq, list *[]models.Patent2, cou
 	dstFile, err := os.Create(fileName)
 	defer dstFile.Close()
 	dstFile.WriteString(str1 + "\n")
-	fmt.Println("写入文档" + fileName + "成功!")
 
-	//fmt.Println("str1在这里！", str1)
-	list = &list1
 	return nil
 }
 
@@ -322,14 +335,17 @@ type Option func(TextSimilarity) TextSimilarity
 func CutFirst(claims string) string {
 	res := strings.Split(claims, "\n")
 	res2 := strings.Split(res[0], "1.")
-	return res2[1]
+	if len(res2) > 0 {
+		return res2[1]
+	}
+	return res2[0]
 }
 
 func LastWord(scale float64) string {
 	if scale > 0.5 {
-		return "\n本次查新在国内公开发表的中文文献中，与本项目研究内容类似的文献报道较多，本项目研究内容在国内外新颖性与创造性不足。"
+		return badresult
 	}
-	return "\n本次查新在国内公开发表的中文文献中，尚未见有与本项目研究内容一致的文献报道，本项目研究内容在国内外具备新颖性。"
+	return goodresult
 }
 
 // Cosine returns the Cosine Similarity between two vectors.
@@ -375,10 +391,8 @@ func count(key string, a []string) int {
 }
 
 func getTime() string {
-	Year := time.Now().Year()
-	Month := int(time.Now().Month())
-	Day := time.Now().Day()
-	time := strconv.Itoa(Year) + "年" + strconv.Itoa(Month) + "月" + strconv.Itoa(Day) + "日"
+	t := time.Now()
+	time := t.Format("2006年1月2日")
 	return time
 }
 func GetRandomString(l int) string {
@@ -558,11 +572,6 @@ func unique(resWords []string) []string {
 		}
 	}
 	return result[:result_idx]
-}
-
-func html() string {
-	str := "<style type=\"text/css\">\n.mytable{\nmargin:0 auto;\nwidth:620px;\n}\n</style>\n<table class=\"mytable\" cellspacing=\"0\" cellpadding=\"0\">\n    <tbody>\n        <tr style=\";height:869px\" class=\"firstRow\">\n            <td colspan=\"7\"  style=\"border: 1px solid windowtext; padding: 0px 7px; word-break: break-all;\" width=\"553\"  valign=\"top\" height=\"869\">\n                <p>\n                    报告编号：number\n                </p>\n                <p>\n                    &nbsp;\n                </p>\n                <p>\n                    &nbsp;\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:30px;font-family:宋体\">科 技 查 新 报 告</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:29px;font-family:宋体\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:29px;font-family:宋体\">&nbsp;</span></strong>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">项目名称：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">pname</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">委&nbsp;&nbsp;托&nbsp;&nbsp;人：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">pearson</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">委托日期：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">startdate</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">查新机构：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">institution</span>\n                </p>\n                <p style=\"margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%\">\n                    <strong><span style=\"font-size:19px;line-height:150%\">完成日期：&nbsp; </span></strong><span style=\"font-size:16px;line-height:150%\">finishdate</span>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:21px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:16px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:16px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:16px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:21px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:left\">\n                    <strong><span style=\"font-size:21px\">&nbsp;</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <strong><span style=\"font-size:16px\">教育部科技发展中心</span></strong>\n                </p>\n                <p style=\"text-align:center\">\n                    <span style=\"font-size:16px\">二O一三年制</span>\n                </p>\n            </td>\n        </tr>\n    </tbody>\n</table>\n<p>\n    <br/>\n</p>\n<table class=\"mytable\" cellspacing=\"0\" cellpadding=\"0\">    <tbody>\n        <tr style=\";height:36px\" class=\"firstRow\">\n            <td rowspan=\"2\" style=\"border: 1px solid windowtext; padding: 0px 7px; word-break: break-all;\" width=\"77\" height=\"36\">\n                <p style=\"text-align:justify;text-justify:distribute-all-lines\">\n                    查新项目\n                </p>\n                <p style=\"text-align:justify;text-justify:distribute-all-lines\">\n                    名称\n                </p>\n            </td>\n            <td colspan=\"6\" style=\"border-color: windowtext windowtext windowtext currentcolor; border-style: solid solid solid none; border-width: 1px 1px 1px medium; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"476\" height=\"36\">\n                <p>\n                    中文：cname\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:36px\">\n            <td colspan=\"6\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"476\" height=\"36\">\n                <p>\n                    英文：略\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:23px\">\n            <td rowspan=\"5\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"77\" height=\"23\">\n                <p style=\"text-align:center\">\n                    查新机构\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"75\" height=\"23\">\n                <p>\n                    名称\n                </p>\n            </td>\n            <td colspan=\"5\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"401\" height=\"23\">\n                insName<br/>\n            </td>\n        </tr>\n        <tr style=\";height:23px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"75\" height=\"23\">\n                <p>\n                    通信地址\n                </p>\n            </td>\n            <td colspan=\"3\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"232\" height=\"23\">\n                insAddress<br/>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"67\" height=\"23\">\n                <p>\n                    邮政编码\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"102\" height=\"23\">\n                insPost<br/>\n            </td>\n        </tr>\n        <tr style=\";height:17px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"75\" height=\"17\">\n                <p>\n                    负责人\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"93\" height=\"17\">\n                pic<br/>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"58\" height=\"17\">\n                <p>\n                    电话\n                </p>\n            </td>\n            <td colspan=\"3\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"250\" height=\"17\">\n                tele1<br/>\n            </td>\n        </tr>\n        <tr style=\";height:16px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"75\" height=\"16\">\n                <p>\n                    联系人\n                </p>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"93\" height=\"16\">\n                ptc<br/>\n            </td>\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"58\" height=\"16\">\n                <p>\n                    电话\n                </p>\n            </td>\n            <td colspan=\"3\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"250\" height=\"16\">\n                tele2<br/>\n            </td>\n        </tr>\n        <tr style=\";height:27px\">\n            <td style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px;\" width=\"75\" height=\"27\">\n                <p>\n                    电子邮箱\n                </p>\n            </td>\n            <td colspan=\"5\" style=\"border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;\" width=\"401\" height=\"27\">\n                insEamil<br/>\n            </td>\n        </tr>\n        <tr style=\";height:107px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"107\">\n                <p>\n       <br>   <strong><span style=\"font-size:20px;font-family:宋体\">一、项目的科学技术要点\n  </span></strong>              </p> <p style=\"text-indent:28px\">&nbsp;telepoint\n       </p>      </td>\n        </tr>\n        <tr style=\";height:107px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"107\">\n                <p>\n       <br>       <strong><span style=\"font-size:20px;font-family:宋体\">二、专利检索范围及检索策略\n  </span></strong>                       </p>\n                <p style=\"text-indent:28px\">\n                <strong>     检索的中文数据库\n      </strong>           </p>\n                <p style=\"text-indent:28px\">\n                    &nbsp;cDataBase\n                </p>\n                <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n                <p style=\"text-indent:28px\">\n            <strong>         检索词\n       </strong>          </p >\n                     &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;        retWord\n                              <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n                <p style=\"text-indent:28px\">\n                  <strong>   检索式\n       </strong>          </p>\n                             &nbsp;&nbsp;&nbsp;&nbsp;     retType\n              &nbsp;\n                <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:89px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"89\">\n                <p>\n       <br>      <strong><span style=\"font-size:20px;font-family:宋体\">  三、检索结果\n  </span></strong>                     </p>\n                <p style=\"text-indent:28px\">\n                    依据上专利检索范围和检索式，共检索出相专利 num1 项，其中密切相关专利 num2 项，题录为：\n                </p>&nbsp; &nbsp;&nbsp;&nbsp; retResult\n                <p style=\"text-indent:28px\">\n                    &nbsp;\n                </p>\n            </td>\n        </tr>\n        <tr style=\";height:89px\">\n            <td colspan=\"7\" style=\"border-color: currentcolor windowtext windowtext; border-style: none solid solid; border-width: medium 1px 1px; border-image: none 100% / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;\" width=\"553\" valign=\"top\" height=\"89\">\n                <p>\n    <br>     <strong><span style=\"font-size:20px;font-family:宋体\">  四、查新结论\n    </span></strong>                      </p>\n                                        <p style=\"text-indent:28px\">   经对检出的相关文献进行阅读、分析、对比，结论如下：</p> <p style=\"text-indent:28px\"> retConclusion </p> \n                <p>\n                    &nbsp;\n                </p>\n            </td>\n        </tr>\n    </tbody>\n</table>\n<p>\n    <br/>\n</p>"
-	return str
 }
 
 func RemoveStop(unstop []string) []string {
