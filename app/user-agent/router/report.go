@@ -22,9 +22,10 @@ func registerReportRouter(v1 *gin.RouterGroup, authMiddleware *jwt.GinJWTMiddlew
 		r.GET("", apiUser.UserGetReports)                                // 用户查看认领专利的报告申请表   √
 		r.GET("/patent/:report_id", apiUser.GetPatentByReId)             // 用户通过 reportID 查看报告申请的专利   √
 		r.GET("/:type", apiUser.UserGetReportByType)                     // 用户通过 类型 查看报告   √
-		r.GET("/novelty/:patent_id", apiUser.GetPatentNovelty)           // 申请查新报告
 		r.PUT("/cancel/:report_id", apiUser.CancelReport)                // 用户撤销申请报告   √
 		r.PUT("/reApp/:report_id", apiUser.ReapplyReport)                // 用户重新申请报告   √
 		r.POST("", apiUser.InsertReport)                                 // 用户申请报告   √
+
+		r.POST("/novelty", apiUser.GenPatentNovelty) // 申请查新报告
 	}
 }
