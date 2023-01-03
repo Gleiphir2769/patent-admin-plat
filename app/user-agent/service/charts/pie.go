@@ -40,7 +40,7 @@ const pieProfile = `{
       "data": $DATA
     }
   ]
-};`
+}`
 
 func pieDataTemplate(classes []string, values []int) string {
 	pieList := make(PieDataList, 0)
