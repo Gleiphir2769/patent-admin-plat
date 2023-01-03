@@ -108,7 +108,7 @@ func (e Search) Search(c *gin.Context) {
 // @Description 根据查询字符串进行搜索全文
 // @Tags 专利搜索全文
 // @Param data body dto.SimpleSearchReq true "用户数据"
-// @Success 200 {object} dto.SwagSearchListResp
+// @Success 200 {object} dto.PatentDetail
 // @Router /api/v1/user-agent/auth-search/full [post]
 // @Security Bearer
 func (e Search) SearchFullText(c *gin.Context) {
