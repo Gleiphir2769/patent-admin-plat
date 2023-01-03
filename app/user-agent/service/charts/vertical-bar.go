@@ -43,9 +43,9 @@ const verticalBarProfile = `{
 func genVerticalBarProfile(cate []string, data []int, isRotate bool) string {
 	p := newProfile(verticalBarProfile)
 	if isRotate {
-		p.replace("$ROTATE", ROTATE)
+		p = p.replace("$ROTATE", ROTATE)
 	} else {
-		p.replace("$ROTATE", "")
+		p = p.replace("$ROTATE", "")
 	}
 	cateTemp := strListTemplate(cate)
 	dataTemp := intListTemplate(data)
