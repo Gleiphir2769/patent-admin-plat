@@ -159,58 +159,74 @@ func (e *Report) UpdateReport(c *dtos.ReportGetPageReq) error {
 
 // GetNovelty 获取查新报告
 func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
-	var sentence = c.Title + c.CL
+	var sentence = c.Title + "。" + c.CL
 	var seg gse.Segmenter
 	seg.LoadDict()
 	segments := seg.Segment([]byte(sentence))
-	see := report.GetResult(segments)
-	resWords := report.RemoveStop(see)
-	result := report.Unique(resWords)
+	result := GenKey(segments)
+	GenVerb := report.GetResult(segments, 2)
 
+	ts2 := report.NewTextSimilarity(strings.Split(sentence, "。"))
+
+	key := ts2.Keywords(-1, 1, 1)
+	query := GenQuery(key)
+	//query := strings.Join(GenKey(seg.Segment([]byte(c.Title))), " ")
 	//query := strings.Join(result, " OR ")
-	query := "无人机 导航 地图"
-	searchReq := &dto.SimpleSearchReq{
-		Pagination: cDto.Pagination{
-			PageIndex: 1,
-			PageSize:  100,
-		},
-		Query: query,
-		DB:    "wgzl,syxx,fmzl",
-	}
-
-	checkList, err := GetCurrentInnojoy().Search(searchReq, nil)
-	if err != nil {
-		return "", err
+	//query := "无人机 导航 地图"
+	var checkList []*dto.PatentDetail
+	for i := 0; i < len(query) && len(checkList) < 30; i++ {
+		searchReq := &dto.SimpleSearchReq{
+			Pagination: cDto.Pagination{
+				PageIndex: 1,
+				PageSize:  100,
+			},
+			Query: query[i],
+			DB:    "wgzl,syxx,fmzl",
+		}
+		checkListTemp, err := GetCurrentInnojoy().Search(searchReq, nil)
+		if err != nil {
+			return "", err
+		}
+		checkList = append(checkList, checkListTemp...)
 	}
 
 	var totalinfo []string
 	for j := 0; j < len(checkList); j++ {
-		totalinfo = append(totalinfo, checkList[j].Ti+"，"+checkList[j].Cl)
+		totalinfo = append(totalinfo, checkList[j].Ti+"，"+checkList[j].Abst)
 	}
-	ts := report.NewTextSimilarity(totalinfo)
+	//ts := report.NewTextSimilarity(totalinfo)
 
 	var sims []report.Similarity
 	for j := 0; j < len(checkList); j++ {
 		var temp = report.Similarity{}
 		for i := 0; i < len(result); i++ {
-			if strings.Contains(checkList[j].Ti, result[i]) || strings.Contains(checkList[j].Cl, result[i]) {
+			if strings.Contains(checkList[j].Ti, result[i]) || strings.Contains(checkList[j].Abst, result[i]) {
 				temp.Count++
 				temp.Words = append(temp.Words, result[i])
 			}
 		}
-		segments1 := seg.Segment([]byte(checkList[j].Ti + checkList[j].Cl))
-		resWords1 := report.GetResult(segments1)
+		segments1 := seg.Segment([]byte(checkList[j].Ti + checkList[j].Abst))
+		resWords1 := report.GetResult(segments1, 0)
 		result1 := report.RemoveStop(report.Unique(resWords1))
-		temp.Score, _ = ts.Similarity(result1, result)
+		temp.Score, _ = ts2.Similarity(result1, result)
 		sims = append(sims, temp)
 	}
-	keywords := ts.Keywords(0.2, 0.8)
+	keywords := ts2.Keywords(-1, 5, 0)
 	keywords = report.Unique(keywords)
 	var searchList string
 	var searchWord = make([][]string, len(keywords))
 	for i := 0; i < len(keywords); i++ {
+		contain := false
+		for j := 0; j < len(GenVerb); j++ {
+			if keywords[i] == GenVerb[j] {
+				contain = true
+				break
+			}
+		}
+		if contain == true {
+			continue
+		}
 		similar := report.GetSimilar(keywords[i])
-
 		searchList += keywords[i] + " " + strings.Join(similar, " ") + "\n"
 		searchWord[i] = make([]string, 0)
 		searchWord[i] = append(searchWord[i], keywords[i])
@@ -220,8 +236,8 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	n := len(sims)
 	var conclusion []string
 	var retconc string
-	var count1 = 1
-	for i := 0; i < n-1 && count1 < 20; i++ {
+	var closeCount = 1
+	for i := 0; i < n-1 && closeCount < 15; i++ {
 		maxNumIndex := i // 无序区第一个
 		for j := i + 1; j < n; j++ {
 			if sims[j].Score > sims[maxNumIndex].Score {
@@ -230,36 +246,46 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 		}
 		sims[i], sims[maxNumIndex] = sims[maxNumIndex], sims[i]
 		checkList[i], checkList[maxNumIndex] = checkList[maxNumIndex], checkList[i]
-		if sims[i].Score > 0.5 {
-			header := report.GenConclusionHeader(count1, checkList[i].Pinn, checkList[i].Pa, checkList[i].Ti,
-				checkList[i].Pnm, checkList[i].Ad, score2Str(sims[i].Score), checkList[i].Cl)
+		if sims[i].Score > 0.4 {
+			if c.Title == checkList[i].Ti {
+				continue
+			}
+			header := report.GenConclusionHeader(closeCount, checkList[i].Pinn, checkList[i].Pa, checkList[i].Ti,
+				checkList[i].Pnm, checkList[i].Ad, score2Str(sims[i].Score), checkList[i].Abst)
 			conclusion = append(conclusion, header)
-			retconc = retconc + "专利" + strconv.Itoa(count1) + "是" + report.CutFirst(checkList[i].Clm) + "\n"
-			count1++
+			retconc = retconc + "专利" + strconv.Itoa(closeCount) + "是" + report.CutFirst(checkList[i].Clm) + "\n"
+			closeCount++
 		}
 	}
-	scale := float64(count1-1) / float64(len(checkList))
+	scale := float64(closeCount-1) / float64(len(checkList))
 	if scale > 0.5 {
-		retconc = retconc + c.CL + report.DisclaimerTemplate + report.NegativeResult
+		retconc = retconc + "而本专利是" + c.CL + report.DisclaimerTemplate + report.NegativeResult
 	} else {
-		retconc = retconc + c.CL + report.DisclaimerTemplate + report.PositiveResult
+		retconc = retconc + "本专利是" + c.CL + report.DisclaimerTemplate + report.PositiveResult
+	}
+	realteCount := 0
+	if len(checkList) > 0 {
+		realteCount = len(checkList) - 1
+	} else {
+		realteCount = len(checkList)
 	}
 
 	reportBase := report.NewNoveltyTemplate()
 	reportBase.Replace("$NUMBER", uuid.New().String()).
 		Replace("$PATENT_NAME", c.Title).
 		Replace("$USER_NAME", "北京邮电大学 胡泊").
+		Replace("$Institution", "教育部科技查新工作站").
 		Replace("$FINISH_DATE", utils.FormatCurrentTime()).
 		Replace("$TECH_POINT", c.CL).
-		Replace("$QUERY_WORD", searchList).
-		Replace("$QUERY_EXPRESSION", queryExpression).
-		Replace("$RELATIVE_NUM", strconv.Itoa(len(checkList))).
-		Replace("$VERY_RELATIVE_NUM", strconv.Itoa(count1-1)).
-		Replace("$SEARCH_RESULT", strings.Join(conclusion, "\n")).
-		Replace("$CONCLUSION", retconc)
+		Replace("$QUERY_WORD", report.ToHtml(searchList)).
+		Replace("$QUERY_EXPRESSION", report.ToHtml(queryExpression)).
+		Replace("$RELATIVE_NUM", strconv.Itoa(realteCount)).
+		Replace("$VERY_RELATIVE_NUM", strconv.Itoa(closeCount-1)).
+		Replace("$SEARCH_RESULT", report.ToHtml(strings.Join(conclusion, "\n"))).
+		Replace("$CONCLUSION", report.ToHtml(retconc))
 
 	fileName := "./app/user-agent/mytest.html"
-	dstFile, err := os.Create(fileName)
+	dstFile, _ := os.Create(fileName)
 	defer dstFile.Close()
 	dstFile.WriteString(reportBase.String() + "\n")
 
@@ -268,4 +294,21 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 
 func score2Str(score float64) string {
 	return strconv.FormatFloat(score*100, 'f', 2, 64) + "%"
+}
+
+func GenKey(segments []gse.Segment) []string {
+	see := report.GetResult(segments, 0)
+	resWords := report.RemoveStop(see)
+	result := report.Unique(resWords)
+	return result
+}
+
+func GenQuery(key []string) []string {
+	length := len(key)
+	var query []string
+	for i := length; i > 0; i-- {
+		keyTemp := key[0:i]
+		query = append(query, strings.Join(keyTemp, " "))
+	}
+	return query
 }

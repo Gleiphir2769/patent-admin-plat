@@ -5,9 +5,7 @@ import (
 	"errors"
 	"github.com/go-ego/gse"
 	"math"
-	"math/rand"
 	"os"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -39,19 +37,12 @@ type TextSimilarity struct {
 type Option func(TextSimilarity) TextSimilarity
 
 func CutFirst(claims string) string {
-	res := strings.Split(claims, "\n")
+	res := strings.Split(claims, "2.")
 	res2 := strings.Split(res[0], "1.")
 	if len(res2) > 0 {
 		return res2[1]
 	}
 	return res2[0]
-}
-
-func LastWord(scale float64) string {
-	if scale > 0.5 {
-		return NegativeResult
-	}
-	return PositiveResult
 }
 
 // Cosine returns the Cosine Similarity between two vectors.
@@ -102,27 +93,13 @@ func getTime() string {
 	return time
 }
 
-func GetRandomString(l int) string {
-	str := "123456789ABCDEFGHIJKLMNPQRSTUVWXYZ"
-	bytes := []byte(str)
-	result := []byte{}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	for i := 0; i < l; i++ {
-		result = append(result, bytes[r.Intn(len(bytes))])
-	}
-
-	ok1, _ := regexp.MatchString(".[1|2|3|4|5|6|7|8|9]", string(result))
-	ok2, _ := regexp.MatchString(".[Z|X|C|V|B|N|M|A|S|D|F|G|H|J|K|L|Q|W|E|R|T|Y|U|I|P]", string(result))
-	if ok1 && ok2 {
-		return string(result)
-	} else {
-		return GetRandomString(l)
-	}
-}
-
 func tfidf(v string, tokens []string, n int, documentFrequency map[string]int) float64 {
+	if documentFrequency[v] == 0 {
+		return 0
+	}
 	tf := float64(count(v, tokens)) / float64(documentFrequency[v])
 	idf := math.Log(float64(n) / (float64(documentFrequency[v])))
+
 	return tf * idf
 }
 
@@ -168,7 +145,7 @@ func NewTextSimilarity(documents []string) *TextSimilarity {
 	for _, doc := range documents {
 
 		segments1 := seg.Segment([]byte(doc))
-		resWords := RemoveStop(GetResult(segments1))
+		resWords := RemoveStop(GetResult(segments1, 0))
 		allTokens = append(allTokens, resWords...)
 	}
 
@@ -209,7 +186,7 @@ func (ts *TextSimilarity) Similarity(a, b []string) (float64, error) {
 // are either they are too common or too Unique and returns a sorted list of
 // keywords (index 0 being the lower tf-idf Score). Play with the thresholds
 // according to your corpus.
-func (ts *TextSimilarity) Keywords(threshLower, threshUpper float64) []string {
+func (ts *TextSimilarity) Keywords(threshLower, threshUpper float64, pattern int) []string {
 	var (
 		docKeywords = []kv{}
 		result      = []string{}
@@ -218,7 +195,7 @@ func (ts *TextSimilarity) Keywords(threshLower, threshUpper float64) []string {
 	seg.LoadDict()
 	for _, doc := range ts.documents {
 		segments1 := seg.Segment([]byte(doc))
-		tokens := RemoveStop(GetResult(segments1))
+		tokens := RemoveStop(GetResult(segments1, 0))
 		n := len(tokens)
 		mapper := map[string]float64{}
 
@@ -245,6 +222,13 @@ func (ts *TextSimilarity) Keywords(threshLower, threshUpper float64) []string {
 
 		// Select the most common Words relative to the corpus for this doc.
 
+		if pattern != 0 {
+			sort.Slice(vector, func(i, j int) bool {
+				return vector[i].Value < vector[j].Value
+			})
+			docKeywords = append(docKeywords, vector...)
+			break
+		}
 		docKeywords = append(docKeywords, vector...)
 	}
 
@@ -343,22 +327,7 @@ func GetSimilar(word string) []string {
 	return nil
 }
 
-func toString(list []string) string {
-	var result string
-	for i := 0; i < len(list); i++ {
-		result = result + list[i] + " "
-	}
-	return result
-}
-func toString2(list []string) string {
-	var result string
-	for i := 0; i < len(list); i++ {
-		result = result + list[i] + "\n"
-	}
-	return result
-}
-
-func GetResult(segs []gse.Segment, searchMode ...bool) []string {
+func GetResult(segs []gse.Segment, pattern int, searchMode ...bool) []string {
 	var mode bool
 	var output []string
 	if len(searchMode) > 0 {
@@ -371,8 +340,13 @@ func GetResult(segs []gse.Segment, searchMode ...bool) []string {
 		}
 		return output
 	}
-	partOfSpeech := []string{"v", "n", "vn", "x", "an", "nz", "a", "l", "ns"}
-
+	partOfSpeech := []string{"n", "v", "vn", "x", "an", "nz", "a", "l", "ns"}
+	if pattern == 1 {
+		partOfSpeech = []string{"n", "vn", "x", "an", "nz", "a", "l", "ns"}
+	}
+	if pattern == 2 {
+		partOfSpeech = []string{"v"}
+	}
 	for _, seg := range segs {
 		for i := 0; i < len(partOfSpeech); i++ {
 			if seg.Token().Pos() == partOfSpeech[i] {
@@ -385,7 +359,7 @@ func GetResult(segs []gse.Segment, searchMode ...bool) []string {
 	return output
 }
 
-func toHtml(word string) string {
+func ToHtml(word string) string {
 	result := strings.Replace(word, "\n", "<br> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", -1)
 	return result
 

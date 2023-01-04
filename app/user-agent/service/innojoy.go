@@ -20,7 +20,7 @@ const (
 	searchUrl    = "http://www.innojoy.com/service/patentSearch.aspx"
 	statisticUrl = "http://www.innojoy.com/service/patentStat.aspx"
 
-	searchListFields = "TI,AN,AD,PNM,PD,PA,PINN,CL,CD,AR,CLS,CLM"
+	searchListFields = "TI,AN,AD,PNM,PD,PA,PINN,CL,CD,AR,CLS,CLM,ABST"
 	searchSortBy     = "-公开（公告）日,公开（公告）号"
 
 	defaultCacheExpire     = time.Hour * 24

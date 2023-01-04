@@ -25,6 +25,8 @@ func GenConclusionHeader(num int, userName string, depart string, patentName str
 }
 
 const DisclaimerTemplate = `
+
+
 本平台特别声明：
 1、截止您提交查新报告申请之日，本查新报告充分依据提交的具体技术内容而出具。
 2、本平台谨循行业勤勉尽责之精神与诚实信用之原则，以假定提供之文件资料真实有效为前提，并对之进行审慎揣度，力避所出报告记载虚假与误导陈述之内容。
@@ -59,7 +61,7 @@ const noveltyBase = `
                 style="font-size:16px;line-height:150%">$USER_NAME</span> </p> <p
                 style="margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%">
              <strong><span style="font-size:19px;line-height:150%">查新机构：&nbsp; </span></strong><span
-                style="font-size:16px;line-height:150%">institution</span> </p> <p
+                style="font-size:16px;line-height:150%">$Institution</span> </p> <p
                 style="margin-top:16px;margin-right:0;margin-bottom:16px;margin-left:140px;text-align:left;line-height:150%">
              <strong><span style="font-size:19px;line-height:150%">完成日期：&nbsp; </span></strong><span
                 style="font-size:16px;line-height:150%">$FINISH_DATE</span> </p> <p style="text-align:left">
@@ -190,7 +192,7 @@ const noveltyBase = `
         / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;" width="553" valign="top" height="89"> <p>
             <br> <strong><span style="font-size:20px;font-family:宋体">  三、检索结果  </span></strong></p> <p
                 style="text-indent:28px"> 依据上专利检索范围和检索式，共检索出相专利 $RELATIVE_NUM 项，其中密切相关专利 $VERY_RELATIVE_NUM
-            项，题录为： </p>&nbsp; &nbsp;&nbsp;&nbsp; $SEARCH_RESULT <p style="text-indent:28px"> &nbsp; </p>
+            项。 </p>&nbsp; &nbsp;&nbsp;&nbsp; $SEARCH_RESULT <p style="text-indent:28px"> &nbsp; </p>
                     </td>
     </tr>
 
