@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type kv struct {
@@ -85,12 +84,6 @@ func count(key string, a []string) int {
 		}
 	}
 	return count
-}
-
-func getTime() string {
-	t := time.Now()
-	time := t.Format("2006年1月2日")
-	return time
 }
 
 func tfidf(v string, tokens []string, n int, documentFrequency map[string]int) float64 {
@@ -362,7 +355,6 @@ func GetResult(segs []gse.Segment, pattern int, searchMode ...bool) []string {
 func ToHtml(word string) string {
 	result := strings.Replace(word, "\n", "<br> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;", -1)
 	return result
-
 }
 
 func GenQueryExpression(word [][]string) string {
@@ -392,4 +384,25 @@ func GenQueryExpression(word [][]string) string {
 		result += "\n"
 	}
 	return result
+}
+
+func Score2Str(score float64) string {
+	return strconv.FormatFloat(score*100, 'f', 2, 64) + "%"
+}
+
+func GenKey(segments []gse.Segment) []string {
+	see := GetResult(segments, 0)
+	resWords := RemoveStop(see)
+	result := Unique(resWords)
+	return result
+}
+
+func GenQuery(key []string) []string {
+	length := len(key)
+	var query []string
+	for i := length; i > 0; i-- {
+		keyTemp := key[0:i]
+		query = append(query, strings.Join(keyTemp, " "))
+	}
+	return query
 }

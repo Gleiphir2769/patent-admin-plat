@@ -163,16 +163,13 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	var seg gse.Segmenter
 	seg.LoadDict()
 	segments := seg.Segment([]byte(sentence))
-	result := GenKey(segments)
+	result := report.GenKey(segments)
 	GenVerb := report.GetResult(segments, 2)
 
 	ts2 := report.NewTextSimilarity(strings.Split(sentence, "。"))
 
 	key := ts2.Keywords(-1, 1, 1)
-	query := GenQuery(key)
-	//query := strings.Join(GenKey(seg.Segment([]byte(c.Title))), " ")
-	//query := strings.Join(result, " OR ")
-	//query := "无人机 导航 地图"
+	query := report.GenQuery(key)
 	var checkList []*dto.PatentDetail
 	for i := 0; i < len(query) && len(checkList) < 30; i++ {
 		searchReq := &dto.SimpleSearchReq{
@@ -236,7 +233,7 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	n := len(sims)
 	var conclusion []string
 	var retconc string
-	var closeCount = 1
+	var closeCount = 1 //密切相关的专利数量
 	for i := 0; i < n-1 && closeCount < 15; i++ {
 		maxNumIndex := i // 无序区第一个
 		for j := i + 1; j < n; j++ {
@@ -251,7 +248,7 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 				continue
 			}
 			header := report.GenConclusionHeader(closeCount, checkList[i].Pinn, checkList[i].Pa, checkList[i].Ti,
-				checkList[i].Pnm, checkList[i].Ad, score2Str(sims[i].Score), checkList[i].Abst)
+				checkList[i].Pnm, checkList[i].Ad, report.Score2Str(sims[i].Score), checkList[i].Abst)
 			conclusion = append(conclusion, header)
 			retconc = retconc + "专利" + strconv.Itoa(closeCount) + "是" + report.CutFirst(checkList[i].Clm) + "\n"
 			closeCount++
@@ -269,7 +266,6 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	} else {
 		realteCount = len(checkList)
 	}
-
 	reportBase := report.NewNoveltyTemplate()
 	reportBase.Replace("$NUMBER", uuid.New().String()).
 		Replace("$PATENT_NAME", c.Title).
@@ -289,26 +285,5 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	defer dstFile.Close()
 	dstFile.WriteString(reportBase.String() + "\n")
 
-	return "", nil
-}
-
-func score2Str(score float64) string {
-	return strconv.FormatFloat(score*100, 'f', 2, 64) + "%"
-}
-
-func GenKey(segments []gse.Segment) []string {
-	see := report.GetResult(segments, 0)
-	resWords := report.RemoveStop(see)
-	result := report.Unique(resWords)
-	return result
-}
-
-func GenQuery(key []string) []string {
-	length := len(key)
-	var query []string
-	for i := length; i > 0; i-- {
-		keyTemp := key[0:i]
-		query = append(query, strings.Join(keyTemp, " "))
-	}
-	return query
+	return reportBase.String(), nil
 }
