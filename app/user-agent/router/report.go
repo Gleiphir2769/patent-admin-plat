@@ -26,6 +26,6 @@ func registerReportRouter(v1 *gin.RouterGroup, authMiddleware *jwt.GinJWTMiddlew
 		r.PUT("/reApp/:report_id", apiUser.ReapplyReport)                // 用户重新申请报告   √
 		r.POST("", apiUser.InsertReport)                                 // 用户申请报告   √
 
-		r.POST("/novelty/request", apiUser.GenPatentNovelty) // 申请查新报告
+		r.POST("/novelty", apiUser.GenPatentNovelty) // 申请查新报告
 	}
 }

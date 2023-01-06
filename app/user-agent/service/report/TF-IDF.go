@@ -4,12 +4,81 @@ import (
 	"bufio"
 	"errors"
 	"github.com/go-ego/gse"
+	"io"
 	"math"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
 )
+
+var synonymsDict map[string][]string
+var ignoreWordsDict map[string]struct{}
+
+const similarMaxLen = 4
+
+var Seg gse.Segmenter
+
+func init() {
+	ignoreDict, err := os.Open("./app/user-agent/service/dict/ignore_words_dict.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer ignoreDict.Close()
+	ignoreWordsDict = make(map[string]struct{})
+	br := bufio.NewReader(ignoreDict)
+	for {
+		line, _, err := br.ReadLine()
+		if err == io.EOF {
+			break
+		}
+		ignoreWordsDict[string(line)] = struct{}{}
+	}
+
+	file, err := os.Open("./app/user-agent/service/dict/synonyms_dict.txt")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	synonymsDict = make(map[string][]string)
+	br = bufio.NewReader(file)
+	for {
+		bs, _, err := br.ReadLine()
+		if err == io.EOF {
+			break
+		} else if len(bs) == 0 {
+			break
+		}
+		line := string(bs)
+		segs := strings.Split(line, "=")
+		if len(segs) < 2 {
+			continue
+		}
+
+		words := segs[1]
+		allWords := make([]string, 0)
+		for _, word := range strings.Split(words, " ") {
+			if len(word) == 0 {
+				continue
+			}
+			allWords = append(allWords, words)
+		}
+
+		cnt := len(allWords)
+		for i, word := range allWords {
+			if i == 0 {
+				synonymsDict[word] = allWords[1:cnt]
+				continue
+			} else if i == cnt-1 {
+				synonymsDict[word] = allWords[0 : cnt-1]
+				continue
+			}
+			synonymsDict[word] = append(allWords[0:i], allWords[i+1:cnt]...)
+		}
+	}
+
+	Seg.LoadDict()
+}
 
 type kv struct {
 	Key   string
@@ -133,11 +202,8 @@ func NewTextSimilarity(documents []string) *TextSimilarity {
 	}
 
 	ts.documentFrequency = map[string]int{}
-	var seg gse.Segmenter
-	seg.LoadDict()
 	for _, doc := range documents {
-
-		segments1 := seg.Segment([]byte(doc))
+		segments1 := Seg.Segment([]byte(doc))
 		resWords := RemoveStop(GetResult(segments1, 0))
 		allTokens = append(allTokens, resWords...)
 	}
@@ -184,10 +250,8 @@ func (ts *TextSimilarity) Keywords(threshLower, threshUpper float64, pattern int
 		docKeywords = []kv{}
 		result      = []string{}
 	)
-	var seg gse.Segmenter
-	seg.LoadDict()
 	for _, doc := range ts.documents {
-		segments1 := seg.Segment([]byte(doc))
+		segments1 := Seg.Segment([]byte(doc))
 		tokens := RemoveStop(GetResult(segments1, 0))
 		n := len(tokens)
 		mapper := map[string]float64{}
@@ -258,28 +322,9 @@ func Unique(resWords []string) []string {
 }
 
 func RemoveStop(unstop []string) []string {
-	file, err := os.Open("./app/user-agent/file1.txt")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	stops := make([]string, 0)
 	result := make([]string, 0)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		stop := strings.Split(line, "\n")
-		stops = append(stops, stop[0])
-	}
 	for i := 0; i < len(unstop); i++ {
-		same := 0
-		for j := 0; j < len(stops); j++ {
-			if stops[j] == unstop[i] {
-				same = 1
-				break
-			}
-		}
-		if same == 0 {
+		if _, ok := ignoreWordsDict[unstop[1]]; !ok {
 			result = append(result, unstop[i])
 		}
 	}
@@ -287,34 +332,11 @@ func RemoveStop(unstop []string) []string {
 }
 
 func GetSimilar(word string) []string {
-	var max = 4
-	file, err := os.Open("./app/user-agent/cilin.txt")
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	similarwords := make([]string, 0)
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		similarword := strings.Split(line, "\n")
-		similarwords = append(similarwords, similarword[0])
-	}
-	for i := 0; i < len(similarwords); i++ {
-		result := make([]string, 0)
-		temp := strings.Split(similarwords[i], " ")
-		var include = false
-		var count = 0
-		for j := 1; j < len(temp) && count < max; j++ {
-			if temp[j] == word {
-				include = true
-			} else {
-				result = append(result, temp[j])
-				count++
-			}
-		}
-		if include {
-			return result
+	if similar, ok := synonymsDict[word]; ok {
+		if len(similar) > similarMaxLen {
+			return similar[:similarMaxLen]
+		} else {
+			return similar
 		}
 	}
 	return nil

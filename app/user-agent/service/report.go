@@ -2,9 +2,9 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	log "github.com/go-admin-team/go-admin-core/logger"
 	"github.com/go-admin-team/go-admin-core/sdk/service"
-	"github.com/go-ego/gse"
 	"github.com/google/uuid"
 	"go-admin/app/admin-agent/model"
 	"go-admin/app/admin-agent/service/dtos"
@@ -160,15 +160,15 @@ func (e *Report) UpdateReport(c *dtos.ReportGetPageReq) error {
 // GetNovelty 获取查新报告
 func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	var sentence = c.Title + "。" + c.CL
-	var seg gse.Segmenter
-	seg.LoadDict()
-	segments := seg.Segment([]byte(sentence))
+	segments := report.Seg.Segment([]byte(sentence))
 	result := report.GenKey(segments)
 	GenVerb := report.GetResult(segments, 2)
-
+	//
 	ts2 := report.NewTextSimilarity(strings.Split(sentence, "。"))
 
 	key := ts2.Keywords(-1, 1, 1)
+
+	fmt.Println("keys", key)
 	query := report.GenQuery(key)
 	var checkList []*dto.PatentDetail
 	for i := 0; i < len(query) && len(checkList) < 30; i++ {
@@ -202,7 +202,7 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 				temp.Words = append(temp.Words, result[i])
 			}
 		}
-		segments1 := seg.Segment([]byte(checkList[j].Ti + checkList[j].Abst))
+		segments1 := report.Seg.Segment([]byte(checkList[j].Ti + checkList[j].Abst))
 		resWords1 := report.GetResult(segments1, 0)
 		result1 := report.RemoveStop(report.Unique(resWords1))
 		temp.Score, _ = ts2.Similarity(result1, result)
