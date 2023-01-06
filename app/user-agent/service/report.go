@@ -169,7 +169,7 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	key := ts2.Keywords(-1, 1, 1)
 
 	fmt.Println("keys", key)
-	query := report.GenQuery(key)
+	query := report.GenQuery(key, GenVerb)
 	var checkList []*dto.PatentDetail
 	for i := 0; i < len(query) && len(checkList) < 30; i++ {
 		searchReq := &dto.SimpleSearchReq{

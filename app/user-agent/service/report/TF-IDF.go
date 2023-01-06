@@ -3,6 +3,7 @@ package report
 import (
 	"bufio"
 	"errors"
+	"fmt"
 	"github.com/go-ego/gse"
 	"io"
 	"math"
@@ -61,7 +62,7 @@ func init() {
 			if len(word) == 0 {
 				continue
 			}
-			allWords = append(allWords, words)
+			allWords = append(allWords, word)
 		}
 
 		cnt := len(allWords)
@@ -304,27 +305,27 @@ func (ts *TextSimilarity) Keywords(threshLower, threshUpper float64, pattern int
 func Unique(resWords []string) []string {
 	result := make([]string, len(resWords))
 	result[0] = resWords[0]
-	result_idx := 1
+	resultIdx := 1
 	for i := 0; i < len(resWords); i++ {
-		is_repeat := false
+		isRepeat := false
 		for j := 0; j < len(result); j++ {
 			if resWords[i] == result[j] {
-				is_repeat = true
+				isRepeat = true
 				break
 			}
 		}
-		if !is_repeat {
-			result[result_idx] = resWords[i]
-			result_idx++
+		if !isRepeat {
+			result[resultIdx] = resWords[i]
+			resultIdx++
 		}
 	}
-	return result[:result_idx]
+	return result[:resultIdx]
 }
 
 func RemoveStop(unstop []string) []string {
 	result := make([]string, 0)
 	for i := 0; i < len(unstop); i++ {
-		if _, ok := ignoreWordsDict[unstop[1]]; !ok {
+		if _, ok := ignoreWordsDict[unstop[i]]; !ok {
 			result = append(result, unstop[i])
 		}
 	}
@@ -419,11 +420,25 @@ func GenKey(segments []gse.Segment) []string {
 	return result
 }
 
-func GenQuery(key []string) []string {
-	length := len(key)
+func GenQuery(key, verb []string) []string {
+	var unVerbWords []string
+	for i := 0; i < len(key); i++ {
+		contain := false
+		for j := 0; j < len(verb); j++ {
+			if key[i] == verb[j] {
+				contain = true
+				break
+			}
+		}
+		if contain == false {
+			unVerbWords = append(unVerbWords, key[i])
+		}
+	}
+	length := len(unVerbWords)
+	fmt.Println("query", unVerbWords)
 	var query []string
 	for i := length; i > 0; i-- {
-		keyTemp := key[0:i]
+		keyTemp := unVerbWords[0:i]
 		query = append(query, strings.Join(keyTemp, " "))
 	}
 	return query
