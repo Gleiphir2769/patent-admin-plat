@@ -1,6 +1,7 @@
 package dto
 
 type NoveltyReportReq struct {
-	Title string `json:"title"`
-	CL    string `json:"CL"`
+	KeyWords []string `json:"keyWords"`
+	Title    string   `json:"title"`
+	CL       string   `json:"CL"`
 }
