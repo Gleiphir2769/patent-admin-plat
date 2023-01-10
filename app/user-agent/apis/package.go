@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin/binding"
 	"go-admin/app/user-agent/models"
 	"net/http"
@@ -362,7 +363,7 @@ func (e Package) IsPatentInPackage(c *gin.Context) {
 // @Accept  application/json
 // @Product application/json
 // @Param data body dto.PatentReq true "专利表数据"
-// @Router /api/v1/user-agent/package/{package_id}/patent/{patent_id} [post]
+// @Router /api/v1/user-agent/package/{package_id}/patent [post]
 // @Security Bearer
 func (e Package) InsertPackagePatent(c *gin.Context) {
 	var err error
@@ -394,6 +395,7 @@ func (e Package) InsertPackagePatent(c *gin.Context) {
 	}
 
 	req.CreateBy = user.GetUserId(c)
+	req.Desc = patentReq.Desc
 
 	err = e.MakeContext(c).
 		MakeOrm().
@@ -420,7 +422,7 @@ func (e Package) InsertPackagePatent(c *gin.Context) {
 // @Tags 专利包
 // @Param PatentId query string false "专利ID"
 // @Param PackageId query string false "专利包ID"
-// @Router /api/v1/user-agent/package/{package_id}/patent/{patent_id} [delete]
+// @Router /api/v1/user-agent/package/{package_id}/patent/{PNM} [delete]
 // @Security Bearer
 func (e Package) DeletePackagePatent(c *gin.Context) {
 	s := service.PatentPackage{}
@@ -445,13 +447,14 @@ func (e Package) DeletePackagePatent(c *gin.Context) {
 	}
 	req.PackageId = packageId
 
-	patentId, err := strconv.Atoi(c.Param("pid"))
-	if err != nil {
+	PNM := c.Param("PNM")
+	if len(PNM) == 0 {
+		err = fmt.Errorf("PNM should be provided in path")
 		e.Logger.Error(err)
 		e.Error(500, err, err.Error())
 		return
 	}
-	req.PatentId = patentId
+	req.PNM = PNM
 
 	err = s.RemovePackagePatent(&req)
 
@@ -460,4 +463,112 @@ func (e Package) DeletePackagePatent(c *gin.Context) {
 		return
 	}
 	e.OK(req.PackageBack, "删除成功")
+}
+
+// UpdatePackagePatentDesc
+// @Summary 更新专利包专利描述
+// @Description  更新专利包专利描述
+// @Tags 专利包
+// @Param data body dto.PatentDescReq true "专利描述"
+// @Router /api/v1/user-agent/package/{package_id}/patent/{PNM}/desc [put]
+// @Security Bearer
+func (e Package) UpdatePackagePatentDesc(c *gin.Context) {
+	s := service.PatentPackage{}
+	req := dto.PatentDescReq{}
+	req.SetUpdateBy(user.GetUserId(c))
+	err := e.MakeContext(c).
+		MakeOrm().
+		Bind(&req).
+		MakeService(&s.Service).
+		Errors
+
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+
+	packageId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+	req.PackageID = packageId
+
+	PNM := c.Param("PNM")
+	if len(PNM) == 0 {
+		err = fmt.Errorf("PNM should be provided in path")
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+	req.PNM = PNM
+
+	err = s.UpdatePackagePatentDesc(&req)
+
+	if err != nil {
+		e.Logger.Error(err)
+		return
+	}
+	e.OK(req, "更新成功")
+}
+
+//---------------------------------------------------patent--graph-------------------------------------------------------
+
+// GetRelationGraphByPackage
+// @Summary 获取专利包关系图谱
+// @Description  获取专利包关系图谱
+// @Tags 专利包
+// @Router /api/v1/user-agent/package/{packageId}/graph/relation [get]
+// @Security Bearer
+func (e Package) GetRelationGraphByPackage(c *gin.Context) {
+	sp := service.Patent{}
+	reqp := dto.PatentsIds{}
+	spp := service.PatentPackage{}
+	reqpp := dto.PackagePageGetReq{}
+	Inventorgraph := models.Graph{}
+	var err error
+	reqpp.PackageId, err = strconv.Atoi(c.Param("id"))
+	err = e.MakeContext(c).
+		MakeOrm().
+		MakeService(&spp.Service).
+		Errors
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+	reqpp.SetUpdateBy(user.GetUserId(c))
+	listpp := make([]models.PatentPackage, 0)
+	var count int64
+	err = spp.GetPatentIdByPackageId(&reqpp, &listpp, &count)
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+	reqp.PatentIds = make([]int, len(listpp))
+	for i := 0; i < len(listpp); i++ {
+		reqp.PatentIds[i] = listpp[i].PatentId
+	}
+	listp := make([]models.Patent, 0)
+	err = e.MakeContext(c).
+		MakeOrm().
+		MakeService(&sp.Service).
+		Errors
+
+	err = sp.GetPageByIds(&reqp, &listp, &count)
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+	err = sp.GetGraphByPatents(listp, &Inventorgraph)
+	if err != nil {
+		e.Logger.Error(err)
+		e.Error(500, err, err.Error())
+		return
+	}
+	e.OK(Inventorgraph, "查询成功")
 }

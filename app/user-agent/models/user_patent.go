@@ -12,9 +12,8 @@ type UserPatent struct {
 	UserId   int    `gorm:"comment:用户ID"  json:"userId"`
 	PNM      string `json:"PNM" gorm:"size:128;comment:申请号"`
 	Type     string `json:"Type" gorm:"size:64;comment:关系类型（关注/认领）"`
-
-	CreatedAt string `json:"createdAt" gorm:"comment:创建时间"`
-	UpdatedAt string `json:"updatedAt" gorm:"comment:最后更新时间"`
+	Desc     string `json:"desc" gorm:"size:128;comment:描述"`
+	models.ModelTime
 	models.ControlBy
 }
 
