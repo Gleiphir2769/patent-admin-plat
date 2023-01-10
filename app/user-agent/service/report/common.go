@@ -35,6 +35,13 @@ const DisclaimerTemplate = `
 `
 
 const noveltyBase = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
 <style type="text/css">.mytable {
     margin: 0 auto;
     width: 620px;
@@ -72,7 +79,7 @@ const noveltyBase = `
             <strong><span style="font-size:21px">&nbsp;</span></strong> </p> <p style="text-align:left">
             <strong><span style="font-size:21px">&nbsp;</span></strong> </p> <p style="text-align:center">
             <strong><span style="font-size:16px">教育部科技发展中心</span></strong> </p> <p
-                style="text-align:center"> <span style="font-size:16px">二O一三年制</span> </p>
+                style="text-align:center"> <span style="font-size:16px">二O二三年制</span> </p>
                     </td>
     </tr>
 
@@ -82,7 +89,7 @@ const noveltyBase = `
 <table class="mytable" cellspacing="0" cellpadding="0">
     <tbody>
     <tr style=";height:36px" class="firstRow">
-        <td rowspan="2" style="border: 1px solid windowtext; padding: 0px 7px; word-break: break-all;
+        <td rowspan="1" style="border: 1px solid windowtext; padding: 0px 7px; word-break: break-all;
         " width="77" height="36"> <p style="text-align:justify;text-justify:distribute-all-lines">
             查新项目 </p> <p style="text-align:justify;text-justify:distribute-all-lines"> 名称 </p>
                     </td>
@@ -90,12 +97,6 @@ const noveltyBase = `
             solid none; border-width: 1px 1px 1px medium; border-image: none 100%
         / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;" width="476" height="36"> <p>
             中文：$PATENT_NAME </p>            </td>
-    </tr>
-
-    <tr style=";height:36px">
-        <td colspan="6" style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none
-            solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="476" height="36"> <p> 英文：略 </p>            </td>
     </tr>
 
     <tr style=";height:23px">
@@ -108,7 +109,7 @@ const noveltyBase = `
         " width="75" height="23"> <p> 名称 </p>            </td>
         <td colspan="5" style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none
             solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="401" height="23"> insName<br/>            </td>
+        " width="401" height="23"> $DEPART_NAME <br/>            </td>
     </tr>
 
     <tr style=";height:23px">
@@ -117,13 +118,13 @@ const noveltyBase = `
         " width="75" height="23"> <p> 通信地址 </p>            </td>
         <td colspan="3" style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none
             solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="232" height="23"> insAddress<br/>            </td>
+        " width="232" height="23"> $CONTACT_ADDR <br/>            </td>
         <td style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none;
             border-width: medium 1px 1px medium; padding: 0px 7px;
         " width="67" height="23"> <p> 邮政编码 </p>            </td>
         <td style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none;
             border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="102" height="23"> insPost<br/>            </td>
+        " width="102" height="23"> $ZIP_CODE<br/>            </td>
     </tr>
 
     <tr style=";height:17px">
@@ -132,13 +133,13 @@ const noveltyBase = `
         " width="75" height="17"> <p> 负责人 </p>            </td>
         <td style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none;
             border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="93" height="17"> pic<br/>            </td>
+        " width="93" height="17"> $MANAGER_NAME <br/>            </td>
         <td style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none;
             border-width: medium 1px 1px medium; padding: 0px 7px;
         " width="58" height="17"> <p> 电话 </p>            </td>
         <td colspan="3" style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none
             solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="250" height="17"> tele1<br/>            </td>
+        " width="250" height="17"> $MANAGER_TEL <br/>            </td>
     </tr>
 
     <tr style=";height:16px">
@@ -147,13 +148,13 @@ const noveltyBase = `
         " width="75" height="16"> <p> 联系人 </p>            </td>
         <td style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none;
             border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="93" height="16"> ptc<br/>            </td>
+        " width="93" height="16"> $CONTACT_NAME <br/>            </td>
         <td style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none solid solid none;
             border-width: medium 1px 1px medium; padding: 0px 7px;
         " width="58" height="16"> <p> 电话 </p>            </td>
         <td colspan="3" style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none
             solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="250" height="16"> tele2<br/>            </td>
+        " width="250" height="16"> $CONTACT_TEL<br/>            </td>
     </tr>
 
     <tr style=";height:27px">
@@ -162,7 +163,7 @@ const noveltyBase = `
         " width="75" height="27"> <p> 电子邮箱 </p>            </td>
         <td colspan="5" style="border-color: currentcolor windowtext windowtext currentcolor; border-style: none
             solid solid none; border-width: medium 1px 1px medium; padding: 0px 7px; word-break: break-all;
-        " width="401" height="27"> insEamil<br/>            </td>
+        " width="401" height="27"> $EMAIL <br/>            </td>
     </tr>
 
     <tr style=";height:107px">
@@ -179,7 +180,7 @@ const noveltyBase = `
         / 1 / 0 stretch; padding: 0px 7px; word-break: break-all;" width="553" valign="top" height="107"> <p>
             <br> <strong><span style="font-size:20px;font-family:宋体">二、专利检索范围及检索策略  </span></strong>
         </p> <p style="text-indent:28px"> <strong> 检索的中文数据库 </strong></p> <p
-                style="text-indent:28px"> &nbsp;cDataBase </p> <p style="text-indent:28px"> &nbsp; </p>
+                style="text-indent:28px"> &nbsp;$DATABASE </p> <p style="text-indent:28px"> &nbsp; </p>
         <p style="text-indent:28px"> <strong> 检索词 </strong></p> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $QUERY_WORD <p
                 style="text-indent:28px"> &nbsp; </p> <p style="text-indent:28px"> <strong>
             检索式 </strong></p> &nbsp;&nbsp;&nbsp;&nbsp; $QUERY_EXPRESSION &nbsp; <p style="text-indent:28px"> &nbsp; </p>
@@ -207,7 +208,10 @@ const noveltyBase = `
 
     </tbody>
 
-</table><p> <br/></p>`
+</table><p> <br/></p>
+</body>
+</html>
+`
 
 type NoveltyTemplate struct {
 	t string

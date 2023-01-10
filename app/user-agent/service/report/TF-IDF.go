@@ -420,7 +420,7 @@ func GenKey(segments []gse.Segment) []string {
 	return result
 }
 
-func GenQuery(key, verb []string) []string {
+func GenQueryAndCleanVerb(key, verb []string) []string {
 	var unVerbWords []string
 	for i := 0; i < len(key); i++ {
 		contain := false
@@ -439,6 +439,15 @@ func GenQuery(key, verb []string) []string {
 	var query []string
 	for i := length; i > 0; i-- {
 		keyTemp := unVerbWords[0:i]
+		query = append(query, strings.Join(keyTemp, " "))
+	}
+	return query
+}
+
+func GenQuery(keys []string) []string {
+	var query []string
+	for i := len(keys); i > 0; i-- {
+		keyTemp := keys[0:i]
 		query = append(query, strings.Join(keyTemp, " "))
 	}
 	return query

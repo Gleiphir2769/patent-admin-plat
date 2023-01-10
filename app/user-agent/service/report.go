@@ -2,18 +2,17 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	log "github.com/go-admin-team/go-admin-core/logger"
 	"github.com/go-admin-team/go-admin-core/sdk/service"
 	"github.com/google/uuid"
 	"go-admin/app/admin-agent/model"
 	"go-admin/app/admin-agent/service/dtos"
+	"go-admin/app/user-agent/my_config"
 	"go-admin/app/user-agent/service/dto"
 	"go-admin/app/user-agent/service/report"
 	"go-admin/app/user-agent/utils"
 	cDto "go-admin/common/dto"
 	"gorm.io/gorm"
-	"os"
 	"strconv"
 	"strings"
 	//"gorm.io/gorm"
@@ -159,19 +158,10 @@ func (e *Report) UpdateReport(c *dtos.ReportGetPageReq) error {
 
 // GetNovelty 获取查新报告
 func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
-	var sentence = c.Title + "。" + c.CL
-	segments := report.Seg.Segment([]byte(sentence))
-	result := report.GenKey(segments)
-	GenVerb := report.GetResult(segments, 2)
-	//
-	ts2 := report.NewTextSimilarity(strings.Split(sentence, "。"))
+	query := report.GenQuery(c.KeyWords)
 
-	key := ts2.Keywords(-1, 1, 1)
-
-	fmt.Println("keys", key)
-	query := report.GenQuery(key, GenVerb)
-	var checkList []*dto.PatentDetail
-	for i := 0; i < len(query) && len(checkList) < 30; i++ {
+	checkMap := make(map[string]*dto.PatentDetail)
+	for i := 0; i < len(query) && len(checkMap) < 30; i++ {
 		searchReq := &dto.SimpleSearchReq{
 			Pagination: cDto.Pagination{
 				PageIndex: 1,
@@ -184,14 +174,28 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		checkList = append(checkList, checkListTemp...)
+		for _, res := range checkListTemp {
+			if _, ok := checkMap[res.Pnm]; !ok {
+				checkMap[res.Pnm] = res
+			}
+		}
+	}
+
+	var checkList []*dto.PatentDetail
+	for _, pd := range checkMap {
+		checkList = append(checkList, pd)
 	}
 
 	var totalinfo []string
 	for j := 0; j < len(checkList); j++ {
 		totalinfo = append(totalinfo, checkList[j].Ti+"，"+checkList[j].Abst)
 	}
-	//ts := report.NewTextSimilarity(totalinfo)
+
+	var sentence = c.Title + "。" + c.CL
+	segments := report.Seg.Segment([]byte(sentence))
+	result := report.GenKey(segments)
+	GenVerb := report.GetResult(segments, 2)
+	ts2 := report.NewTextSimilarity(strings.Split(sentence, "。"))
 
 	var sims []report.Similarity
 	for j := 0; j < len(checkList); j++ {
@@ -268,9 +272,18 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 	}
 	reportBase := report.NewNoveltyTemplate()
 	reportBase.Replace("$NUMBER", uuid.New().String()).
+		Replace("$DEPART_NAME", my_config.CurrentPatentConfig.NoveltyReportConfig.DepartName).
+		Replace("$CONTACT_ADDR", my_config.CurrentPatentConfig.NoveltyReportConfig.ContactAddr).
+		Replace("$ZIP_CODE", my_config.CurrentPatentConfig.NoveltyReportConfig.ZipCode).
+		Replace("$MANAGER_NAME", my_config.CurrentPatentConfig.NoveltyReportConfig.ManagerName).
+		Replace("$MANAGER_TEL", my_config.CurrentPatentConfig.NoveltyReportConfig.ManagerTel).
+		Replace("$CONTACT_NAME", my_config.CurrentPatentConfig.NoveltyReportConfig.ContactName).
+		Replace("$CONTACT_TEL", my_config.CurrentPatentConfig.NoveltyReportConfig.ContactTel).
+		Replace("$EMAIL", my_config.CurrentPatentConfig.NoveltyReportConfig.Email).
+		Replace("$DATABASE", my_config.CurrentPatentConfig.NoveltyReportConfig.DataBase).
 		Replace("$PATENT_NAME", c.Title).
-		Replace("$USER_NAME", "北京邮电大学 胡泊").
-		Replace("$Institution", "教育部科技查新工作站").
+		Replace("$USER_NAME", c.Applicant).
+		Replace("$Institution", c.Org).
 		Replace("$FINISH_DATE", utils.FormatCurrentTime()).
 		Replace("$TECH_POINT", c.CL).
 		Replace("$QUERY_WORD", report.ToHtml(searchList)).
@@ -279,11 +292,6 @@ func (e *Report) GetNovelty(c *dto.NoveltyReportReq) (string, error) {
 		Replace("$VERY_RELATIVE_NUM", strconv.Itoa(closeCount-1)).
 		Replace("$SEARCH_RESULT", report.ToHtml(strings.Join(conclusion, "\n"))).
 		Replace("$CONCLUSION", report.ToHtml(retconc))
-
-	fileName := "./app/user-agent/mytest.html"
-	dstFile, _ := os.Create(fileName)
-	defer dstFile.Close()
-	dstFile.WriteString(reportBase.String() + "\n")
 
 	return reportBase.String(), nil
 }
